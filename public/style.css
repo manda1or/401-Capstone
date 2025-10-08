@@ -1,0 +1,100 @@
+/* Reset and base styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  position: relative;
+}
+
+/* img */
+img{
+   position: absolute;
+  top:0;
+  left: 0;
+  height: 50px;
+  margin-top: 20px;
+  margin-left: 20px;
+}
+
+
+
+/* Sign-up link in top right Aand login to the right */
+a[href="/views/signup.ejs"],
+a[href="/views/login.ejs"],
+.go{
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 14px;
+  color: #0052ff;
+  text-decoration: none;
+}
+
+a[href="/views/signup.ejs"]:hover {
+  text-decoration: underline;
+}
+
+/* Login container */
+.login-container {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Header */
+.login-container h2 {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #1a1a1a;
+}
+
+/* Input fields */
+.login-container input[type="text"],
+.login-container input[type="password"],
+.login-container input[type="email"]
+{
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* Login button */
+.login-container button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background-color: #0052ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login-container button[type="submit"]:hover {
+  background-color: #003fcc;
+}
+
+/* Forgot password link */
+.login-container a[href="/views/forgot-password.ejs"] {
+  display: block;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #0052ff;
+  text-decoration: none;
+}
+
+.login-container a[href="/views/forgot-password.ejs"]:hover {
+  text-decoration: underline;
+}

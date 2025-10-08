@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Trading - Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <img src="/image.png" alt="" class="logo">
+    <div class="login-container">
+        <h2>Welcome to Your Dashboard</h2>
+
+        <div class="dashboard-section">
+            <h3>Your Portfolio</h3>
+            <p>Stocks Owned: 0</p>
+            <p>Available Balance: $0.00</p>
+        </div>
+
+        <div class="dashboard-section">
+            <h3>Trade</h3>
+            <button class="trade-btn">Buy</button>
+            <button class="trade-btn">Sell</button>
+            <button class="trade-btn">Deposit</button>
+            <button class="trade-btn">Withdraw</button>
+        </div>
+        <div class="dashboard-section">
+            <h3>Market Overview</h3>
+            <p>Here you can view available stocks, prices, and trends.</p>
+        </div>
+    </div>
+</body>
+</html>
