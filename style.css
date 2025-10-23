@@ -1,0 +1,174 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+}
+
+/* welcome message for site. Follows same styling as topnav */
+.topnavMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 20px 0;
+}
+
+.welcomeMessage {
+  position: absolute;
+  left: 40px;
+  background-color: #272EF5;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 14px 36px;
+  border-radius: 9999px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.topnav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  padding: 30px;
+  background-color: transparent;
+}
+
+/* topnav pill shape, color, and effect */
+.topnav a,
+.topnav a:visited,
+.topnav a:active {
+  background-color: #272EF5;
+  color: #fff;
+  text-decoration: none;
+  display: inline-block;
+  padding: 14px 36px;
+  border-radius: 9999px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.topnav a:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.topnav a.active {
+  background-color: #0ea5e9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mainPortfolio {
+  display: flex;
+  justify-content: center;
+  padding: 30px 20px;
+}
+
+.portfolioCard {
+  width: min(880px, 92%);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.portfolioHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.portfolioHeader h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* Pill */
+.badge {
+  background-color: #272EF5;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+/* Body */
+.portfolioBody {
+  margin-top: 6px;
+}
+
+.totalValue {
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 800;
+  color: #0ea5e9;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+.subtext {
+  color: #475569;
+  margin-top: 6px;
+  margin-bottom: 18px;
+}
+
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.stat {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.stat span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.stat strong {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+/* Wrapper to center the square */
+.chartSection {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.chartSquare {
+  width: min(520px, 100%);
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+
+  /* grid lines */
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(2, 6, 23, 0.06) 0px,
+      rgba(2, 6, 23, 0.06) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(2, 6, 23, 0.06) 0px,
+      rgba(2, 6, 23, 0.06) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+}
