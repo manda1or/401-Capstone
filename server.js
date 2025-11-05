@@ -1,130 +1,201 @@
-const express = require('express')
-const path = require('path')
+const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
-require('dotenv').config({ path: './data.env' }); // if your file is named data.env
-;
+require('dotenv').config({ path: './data.env' });
 
-const app = express()
-const PORT = 3000
+const app = express();
+const PORT = 3000;
 
-//Connect the database 
+// --------------------
+// DATABASE CONNECTION
+// --------------------
 mongoose.connect(
-  `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.mkecynt.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`,
+  `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.mkecynt.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
 )
 .then(() => console.log("Connected to MongoDB"))
 .catch(err => console.error("MongoDB connection error:", err));
 
-//User model
- const User = require('./model/user'); // Creates models/user with schema
+// --------------------
+// MODELS
+// --------------------
+const User = require('./model/user');
+const Stock = require('./model/stock');
 
-// View engine
-app.set('view engine', 'ejs')
-app.set('views', path.join(__dirname,'views'))
+// --------------------
+// VIEW ENGINE
+// --------------------
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-//middleware
-// Parse form data
-app.use(express.urlencoded({ extended: true }))
-//middleware 
-// Serve static files from public folder
-app.use(express.static('public'))
+// --------------------
+// MIDDLEWARE
+// --------------------
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
-
-// Session middleware(This saves the session of the user)
 app.use(session({
   secret: 'yourSecretKey',
   resave: false,
   saveUninitialized: false
 }));
 
-// Middleware to protect routes
+// --------------------
+// AUTH MIDDLEWARES
+// --------------------
 function isAuthenticated(req, res, next) {
-  if (req.session.user) {
-    return next();
-  }
+  if (req.session.user) return next();
   res.redirect('/login');
 }
 
+function isAdmin(req, res, next) {
+  if (req.session.user && req.session.user.role === "admin") return next();
+  res.send("Access Denied: Admins Only");
+}
 
-// Routes that takes u to the ejs
+function isUser(req, res, next) {
+  if (req.session.user && req.session.user.role === "user") return next();
+  res.send("Access Denied: Users Only");
+}
+
+// --------------------
+// ROUTES
+// --------------------
+
+// Home
 app.get('/', (req, res) => res.redirect('/login'));
-app.get('/login', (req,res) => res.render('login', { error: null, success: null }));
-app.get('/signup', (req,res) => res.render('signup', { error: null }));
-app.get('/forgot-password', (req,res) => res.render('forgot-password', { error: null }));
-app.get('/dashboard', isAuthenticated, (req,res) => res.render('dashboard', { user: req.session.user }));
 
-// POST handlers
+// Login / Signup / Forgot Password pages
+app.get('/login', (req, res) => res.render('login', { error: null, success: null }));
+app.get('/signup', (req, res) => res.render('signup', { error: null }));
+app.get('/forgot-password', (req, res) => res.render('forgot-password', { error: null }));
 
-// Signup
-app.post('/signup', async (req,res) => {
-  const { username, password } = req.body;
+// --------------------
+// ADMIN ROUTES
+// --------------------
 
-  //check if the user exist in the database and prings a message it it does 
+// Admin dashboard - show current stocks
+app.get('/admin-dashboard', isAdmin, async (req, res) => {
+  const stocks = await Stock.find();
+  res.render('admin-dashboard', { user: req.session.user, stocks });
+});
+
+// Add stock
+app.get('/add-stocks', isAdmin, (req, res) => {
+  res.render('add-stocks', { user: req.session.user, error: null });
+});
+
+app.post('/add-stocks', isAdmin, async (req, res) => {
+  const { name, price, quantity } = req.body;
   try {
-    const existingUser = await User.findOne({ username });
-    if (existingUser) { //if it exit it prints a message
-      return res.render('signup', { error: 'Username already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10); // hash the password in the database
-    const newUser = new User({ username, password: hashedPassword });  //creates a new user and hashed password
-    await newUser.save(); //saves the new user in the database
-
-    res.render('login', { success: 'Account created! Please log in.', error: null });
+    await Stock.create({ name, price, quantity });
+    res.redirect('/admin-dashboard');
   } catch (err) {
-    console.error(err);
-    res.render('signup', { error: 'Error creating account.' });
+    res.render('add-stocks', { user: req.session.user, error: 'Error adding stock' });
   }
 });
 
+// --------------------
+// USER ROUTES
+// --------------------
 
+// User dashboard - show all stocks
+app.get('/dashboard', isUser, async (req, res) => {
+  const stocks = await Stock.find();
+  res.render('dashboard', { user: req.session.user, stocks });
+});
 
-// Login
-app.post('/login', async (req,res) => {
-  const { username, password } = req.body;
+// Buy stock
+app.post('/buy/:id', isUser, async (req, res) => {
+  const selectedStock = await Stock.findById(req.params.id);
+  if (!selectedStock || selectedStock.quantity <= 0) return res.send("Out of stock");
+
+  selectedStock.quantity -= 1;
+  await selectedStock.save();
+
+  res.redirect('/dashboard');
+});
+
+// --------------------
+// AUTHENTICATION ROUTES
+// --------------------
+
+// Signup
+app.post('/signup', async (req, res) => {
+  const { firstName, lastName, username, email, password, confirmPassword } = req.body;
+
+  if (!firstName || !lastName || !username || !email || !password) {
+    return res.render('signup', { error: "All fields are required" });
+  }
+
+  if (password !== confirmPassword) {
+    return res.render('signup', { error: "Passwords do not match" });
+  }
 
   try {
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+      return res.render('signup', { error: "Username or Email already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      firstName,
+      lastName,
+      username,
+      email,
+      password: hashedPassword
+    });
+
+    await newUser.save();
+    res.render('login', { success: "Account created! Please log in.", error: null });
+  } catch (err) {
+    console.error(err);
+    res.render('signup', { error: "Error creating account." });
+  }
+});
+
+// Login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.render('login', { error: 'User not found', success: null });
-    }
+    if (!user) return res.render('login', { error: 'User not found', success: null });
 
-    const passwordMatch = await bcrypt.compare(password, user.password); // waits and compare the plain password with the hashed password in the database
-    if (!passwordMatch) {
-      return res.render('login', { error: 'Incorrect password', success: null }); // if they do not match its rerendered with error message 
-    }
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return res.render('login', { error: 'Incorrect password', success: null });
 
-    // Store user in session
-    req.session.user = user.username;  // stores the username in session so the server knows the user is logged in
+    // Save full name + info in session
+    req.session.user = { 
+      name: `${user.firstName} ${user.lastName}`,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    };
 
-    res.redirect('/dashboard'); //user is directed to dashboard after successfull login
+    if (user.role === "admin") return res.redirect('/admin-dashboard');
+    return res.redirect('/dashboard');
   } catch (err) {
     console.error(err);
     res.render('login', { error: 'Something went wrong', success: null });
   }
 });
 
-// This works only for thr admin
-  // if (username === "admin" && password === "1234") {
-  //   res.render("/dashboard", { user: username }); // load dashboard.ejs
-  // } else {
-  //   res.render("login", { error: "Invalid username or password" });
-  // }
-
 // Logout
-app.get('/logout', (req,res) => {
+app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
 
+// Forgot password (placeholder)
+app.post('/forgot-password', (req, res) => {
+  console.log(req.body);
+  res.redirect('/login');
+});
 
-app.post('/forgot-password', (req,res) => {
-  console.log(req.body)
-  res.redirect('/login')  // after password reset, redirect to login
-})
-
-
-
-// Start server
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`))
+// --------------------
+// START SERVER
+// --------------------
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
