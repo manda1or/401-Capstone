@@ -10,47 +10,70 @@
 <body>
     <div class="topnavMessage">
         <div class="welcomeMessage">
-        <p>Hello <%= user.name %> (<%= user.role %>)</p>
+            <p>Hello <%= user.name %> (<%= user.role %>)</p>
         </div>
-    <div class="topnav">
-        <a class="active" href="/dashboard">Dashboard</a> 
-        <a href="stocks.html">Stocks</a>
-        <a href="wallet.html">Wallet</a>
-        <a href="activity.html">Activity</a>
-        <a href="/logout">Logout</a>
-     </div>
+        <div class="topnav">
+            <a href="/dashboard">Dashboard</a> 
+            <a href="/deposit">Deposit</a>
+            <a href="/withdraw">Withdraw</a>
+            <a href="/history">History</a>
+            <a href="/logout">Logout</a>
+        </div>
     </div>
 
-    <div class="mainPortfolio">
-  <div class="portfolioCard">
-    <div class="portfolioHeader">
-      <span class="badge">Portfolio</span>
-      <h2>Current Holdings</h2>
+    <!-- TOP SUMMARY CARDS -->
+    <div class="summary-cards">
+        <div class="card">
+            <span>Cash Balance</span>
+            <h3>$<%= cashBalance.toFixed(2) %></h3>
+        </div>
+
+        <div class="card">
+            <span>Portfolio Value</span>
+            <h3>$<%= portfolioValue.toFixed(2) %></h3>
+        </div>
     </div>
 
-    <div class="portfolioBody">
-      <div class="totalValue">$0.00</div>
-      <div class="subtext">Total portfolio value</div>
-
-      <div class="miniGrid">
-        <div class="stat">
-          <span>Invested</span>
-          <strong>$0.00</strong>
-        </div>
-        <div class="stat">
-          <span>Gain/Loss</span>
-          <strong>0.00%</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="chartSection">
-  <div class="chartSquare" aria-label="Stock trend placeholder grid"></div>
-  </div>
-  
-  </div>
+    <!-- MAIN CONTENT GRID -->
+    <div class="main-container">
+        
+        <!-- AVAILABLE STOCKS TABLE -->
+        <div class="stocks-table">
+  <h3>Available Stocks</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% stocks.forEach(stock => { %>
+      <tr>
+        <td><%= stock.name %></td>
+        <td>$<%= stock.price.toFixed(2) %></td>
+        <td class="<%= stock.change < 0 ? 'neg' : 'pos' %>"><%= stock.change %>%</td>
+        <td>
+          <form action="/buy/<%= stock._id %>" method="POST">
+            <button type="submit" class="btn-buy">Buy</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
 </div>
 
-</body>
 
+        <!-- MY PORTFOLIO SIDEBAR -->
+        <div class="portfolio-box">
+            <h3>My Portfolio</h3>
+            <% portfolio.forEach(item => { %>
+                <p><strong><%= item.symbol %></strong> - <%= item.shares %> shares</p>
+            <% }) %>
+            <a class="view-btn" href="/portfolio">View Full Portfolio</a>
+        </div>
+    </div>
+</body>
 </html>

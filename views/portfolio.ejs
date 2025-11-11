@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Full Portfolio</title>
+  <link rel="stylesheet" href="/style1.css">
+</head>
+<body>
+  <div class="topnavMessage">
+    <div class="welcomeMessage">
+      <p>Hello <%= user.name %> (<%= user.role %>)</p>
+    </div>
+    <div class="topnav">
+      <a href="/dashboard">Dashboard</a> 
+      <a href="/deposit">Deposit</a>
+      <a href="/withdraw">Withdraw</a>
+      <a href="/history">History</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="mainPortfolio">
+    <div class="portfolioCard">
+      <div class="portfolioHeader">
+        <h2>Full Portfolio</h2>
+        <span class="badge">Total Value: $<%= totalValue.toFixed(2) %></span>
+      </div>
+      <div class="portfolioBody">
+        <% if (portfolio.length === 0) { %>
+          <p>No stocks in portfolio.</p>
+        <% } else { %>
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Shares</th>
+                <th>Price</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% portfolio.forEach(item => { %>
+              <tr>
+                <td><%= item.symbol %></td>
+                <td><%= item.shares %></td>
+                <td>$<%= item.price.toFixed(2) %></td>
+                <td>$<%= item.value.toFixed(2) %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

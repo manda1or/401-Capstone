@@ -1,12 +1,32 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, default: 'user' }
+  firstName: String,
+  lastName: String,
+  username: String,
+  email: String,
+  password: String,
+  role: { type: String, default: 'user' },
+
+  portfolio: [
+    {
+      stockId: { type: mongoose.Schema.Types.ObjectId, ref: 'Stock' },
+      shares: { type: Number, default: 0 }
+    }
+  ],
+
+  cashBalance: { type: Number, default: 10000 }, // start users with $10,000
+
+  history: [
+    {
+      type: { type: String, required: true }, // e.g., "Deposit", "Buy"
+      amount: { type: Number, required: true },
+      date: { type: Date, default: Date.now }
+    }
+  ]
+
 });
 
 module.exports = mongoose.model('User', userSchema);
+
+

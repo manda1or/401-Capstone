@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="/style1.css" />
+    <link rel="stylesheet" type="text/css" href="/style2.css" />
     <title>Stocks</title>
 </head>
 
@@ -13,13 +13,12 @@
            <p>Hello <%= user.username %> (Admin)</p> 
         </div>
     <div class="topnav">
-        <a class="active" href="/admin-dashboard">Dashboard</a> 
-        
-        <a href="wallet.html">Wallet</a>
-        <a href="activity.html">Activity</a>
-        
-        <a href="/logout">Logout</a>
-     </div>
+    <a href="/admin-dashboard">Dashboard</a> 
+    <a href="/add-stocks">Create Stocks</a>
+    <a href="/admin-history">History</a>
+    <a href="/logout">Logout</a>
+</div>
+
     </div>
 
     <h1>Add Stock</h1>
@@ -31,16 +30,6 @@
   <button type="submit">Add Stock</button>
 </form>
 
-<a href="/admin-dashboard">Back</a>
-
-    
-
-    <div class="chartSection">
-  <div class="chartSquare" aria-label="Stock trend placeholder grid"></div>
-  </div>
-  
-  </div>
-</div>
 
 </body>
 

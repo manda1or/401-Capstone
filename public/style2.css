@@ -1,0 +1,187 @@
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  color: #0f172a;
+}
+
+/* Topnav and welcome message */
+.topnavMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 20px 0;
+  background-color: #f0f4ff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.welcomeMessage {
+  position: absolute;
+  left: 40px;
+  background-color: #272EF5;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 30px;
+  border-radius: 9999px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.topnav a,
+.topnav a:visited {
+  background-color: #272EF5;
+  color: #fff;
+  text-decoration: none;
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.topnav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  padding: 20px;
+}
+
+.topnav a {
+  background-color: #272EF5; /* default blue */
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 28px;
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+  display: inline-block;
+}
+
+.topnav a:hover {
+  background-color: #1e51db; /* slightly darker on hover */
+  transform: translateY(-2px);
+}
+
+
+
+
+
+/* Page title */
+h1 {
+  text-align: center;
+  margin: 40px 0 20px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Form container */
+form {
+  max-width: 400px;
+  margin: 0 auto 30px;
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+form input {
+  padding: 12px 15px;
+  font-size: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+form input:focus {
+  border-color: #272EF5;
+  box-shadow: 0 0 5px rgba(39,46,245,0.3);
+}
+
+form button {
+  padding: 12px 20px;
+  background-color: #272EF5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+form button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+/* Back link */
+/* a[href="/admin-dashboard"] {
+  display: inline-block;
+  margin: 0 auto;
+  text-align: center;
+  background-color: #e2e8f0;
+  color: #0f172a;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+a[href="/admin-dashboard"]:hover {
+  background-color: #cbd5e1;
+} */
+
+/* Chart section */
+.chartSection {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.chartSquare {
+  width: min(520px, 90%);
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(2, 6, 23, 0.06) 0px,
+      rgba(2, 6, 23, 0.06) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(2, 6, 23, 0.06) 0px,
+      rgba(2, 6, 23, 0.06) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .topnav {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  form {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .welcomeMessage {
+    position: static;
+    margin-bottom: 15px;
+  }
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/style2.css">
+  <title>Admin History</title>
+</head>
+<body>
+  <div class="topnavMessage">
+    <div class="welcomeMessage">
+      <p>Hello <%= user.username %> (Admin)</p>
+    </div>
+    <div class="topnav">
+      <a href="/admin-dashboard">Dashboard</a>
+      <a href="/add-stocks">Create Stocks</a>
+      <a class="active" href="/admin-history">History</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <h1>Stocks History</h1>
+
+  <div class="main-container">
+    <div class="stocks-table" style="flex: 1;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Added By</th>
+            <th>Date Added</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% stocks.forEach(stock => { %>
+            <tr>
+              <td><%= stock.name %></td>
+              <td>$<%= stock.price.toFixed(2) %></td>
+              <td><%= stock.quantity %></td>
+              <td><%= stock.createdBy %></td>
+              <td><%= stock.createdAt.toLocaleString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

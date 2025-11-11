@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/style1.css">
+    <title>Transaction History</title>
+</head>
+<body>
+
+<div class="topnavMessage">
+    <div class="welcomeMessage">
+        <p>Hello <%= user.name %> (<%= user.role %>)</p>
+    </div>
+    <div class="topnav">
+        <a href="/dashboard">Dashboard</a> 
+        <a href="/deposit">Deposit Cash</a>
+        <a href="/withdraw">Withdraw</a>
+        <a class="active" href="/history">History</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="stocks-table" style="flex:1;">
+        <h3>Transaction History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% history.forEach(item => { %>
+                <tr>
+                    <td><%= item.type %></td>
+                    <td>$<%= item.amount.toFixed(2) %></td>
+                    <td><%= item.date.toLocaleString() %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
