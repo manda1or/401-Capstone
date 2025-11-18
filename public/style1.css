@@ -109,6 +109,18 @@ body {
   word-break: break-word;
 }
 
+.pos {
+    color: #28a745; /* green */
+    font-weight: bold;
+}
+
+.neg {
+    color: #dc3545; /* red */
+    font-weight: bold;
+}
+
+
+
 .btn-buy {
   background: #007bff;
   color: white;
@@ -151,4 +163,94 @@ body {
     position: static;
     margin-bottom: 10px;
   }
+}
+
+
+/* 🔥 LIVE PRICE ANIMATION */
+.price, .percent {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.flash {
+    transform: scale(1.15);
+}
+
+/* Green Up */
+.pos {
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Red Down */
+.neg {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Optional: smooth arrow change */
+.arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.neg .arrow {
+    transform: rotate(5deg);
+}
+
+.pos .arrow {
+    transform: rotate(-5deg);
+}
+
+
+.btn-sell {
+  background: #dc3545;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-sell:hover {
+  background: #b02a37;
+}
+
+.mainPortfolio {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.portfolioCard {
+  width: 80%;
+  max-width: 900px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.portfolioBody table {
+  width: 100%;
+  text-align: center;
+}
+
+.btn-buy {
+  background: #007bff;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.btn-buy:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Center Buy/Sell buttons in portfolio table */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
 }

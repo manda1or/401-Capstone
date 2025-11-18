@@ -14,8 +14,7 @@
         </div>
         <div class="topnav">
             <a href="/dashboard">Dashboard</a> 
-            <a href="/deposit">Deposit</a>
-            <a href="/withdraw">Withdraw</a>
+            <a href="/wallet">Wallet</a>
             <a href="/history">History</a>
             <a href="/logout">Logout</a>
         </div>
@@ -30,30 +29,42 @@
 
         <div class="card">
             <span>Portfolio Value</span>
-            <h3>$<%= portfolioValue.toFixed(2) %></h3>
+            <h3 class="portfolio-value" data-value="<%= portfolioValue %>">
+    $<%= portfolioValue.toFixed(2) %>
+</h3>
+
         </div>
     </div>
 
     <!-- MAIN CONTENT GRID -->
     <div class="main-container">
         
-        <!-- AVAILABLE STOCKS TABLE -->
-        <div class="stocks-table">
-  <h3>Available Stocks</h3>
+<!-- STOCK MARKET TABLE -->
+<div class="stocks-table">
+  <h3>Stock Market</h3>
   <table>
     <thead>
       <tr>
         <th>Name</th>
         <th>Price</th>
+        <th>Change</th>
         <th>Action</th>
       </tr>
     </thead>
     <tbody>
       <% stocks.forEach(stock => { %>
-      <tr>
+      <tr data-stock-id="<%= stock._id %>">
         <td><%= stock.name %></td>
-        <td>$<%= stock.price.toFixed(2) %></td>
-        <td class="<%= stock.change < 0 ? 'neg' : 'pos' %>"><%= stock.change %>%</td>
+
+        <!-- PRICE Live Update -->
+        <td class="price">$<%= stock.price.toFixed(2) %></td>
+
+        <!-- Change + Arrow Live Update -->
+        <td class="change <%= stock.change < 0 ? 'neg' : 'pos' %>">
+          <span class="arrow"><%= stock.change < 0 ? '📉' : '📈' %></span>
+          <span class="percent"><%= stock.change %>%</span>
+        </td>
+
         <td>
           <form action="/buy/<%= stock._id %>" method="POST">
             <button type="submit" class="btn-buy">Buy</button>
@@ -75,5 +86,64 @@
             <a class="view-btn" href="/portfolio">View Full Portfolio</a>
         </div>
     </div>
+
+<!-- 🔥 LIVE RANDOM PRICE FLUCTUATION SCRIPT -->
+<script>
+function randomFluctuation() {
+    let totalValue = 0;
+
+    document.querySelectorAll(".stocks-table tbody tr").forEach(row => {
+        const priceEl = row.querySelector(".price");
+        const changeEl = row.querySelector(".change");
+        const arrowEl = row.querySelector(".arrow");
+        const percentEl = row.querySelector(".percent");
+
+        let price = parseFloat(priceEl.innerText.replace("$", ""));
+        let change = (Math.random() * 2 - 1).toFixed(2); // -1% to +1%
+
+        price = (price * (1 + change / 100)).toFixed(2);
+
+        priceEl.innerText = `$${price}`;
+        percentEl.innerText = `${change}%`;
+
+        if (change < 0) {
+            changeEl.classList.replace("pos", "neg");
+            arrowEl.innerText = "📉";
+        } else {
+            changeEl.classList.replace("neg", "pos");
+            arrowEl.innerText = "📈";
+        }
+
+        // Flash animation
+        priceEl.classList.add("flash");
+        percentEl.classList.add("flash");
+        setTimeout(() => {
+            priceEl.classList.remove("flash");
+            percentEl.classList.remove("flash");
+        }, 300);
+
+        // Add to portfolio total if user owns the stock
+        const symbolEl = Array.from(document.querySelectorAll(".portfolio-box p strong"))
+            .find(el => el.textContent.trim() === row.querySelector("td").textContent.trim());
+
+        if (symbolEl) {
+            const shares = parseInt(symbolEl.parentElement.textContent.split(" ")[2]);
+            totalValue += price * shares;
+        }
+    });
+
+    // Update portfolio value at top
+    const portfolioValueEl = document.querySelector(".portfolio-value");
+    portfolioValueEl.innerText = `$${totalValue.toFixed(2)}`;
+
+    portfolioValueEl.classList.add("flash");
+    setTimeout(() => {
+        portfolioValueEl.classList.remove("flash");
+    }, 300);
+}
+
+setInterval(randomFluctuation, 5000);
+</script>
+
 </body>
 </html>

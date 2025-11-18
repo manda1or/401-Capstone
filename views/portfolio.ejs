@@ -6,14 +6,14 @@
   <link rel="stylesheet" href="/style1.css">
 </head>
 <body>
+
   <div class="topnavMessage">
     <div class="welcomeMessage">
       <p>Hello <%= user.name %> (<%= user.role %>)</p>
     </div>
     <div class="topnav">
       <a href="/dashboard">Dashboard</a> 
-      <a href="/deposit">Deposit</a>
-      <a href="/withdraw">Withdraw</a>
+      <a href="/wallet">Wallet</a>
       <a href="/history">History</a>
       <a href="/logout">Logout</a>
     </div>
@@ -23,8 +23,11 @@
     <div class="portfolioCard">
       <div class="portfolioHeader">
         <h2>Full Portfolio</h2>
-        <span class="badge">Total Value: $<%= totalValue.toFixed(2) %></span>
+        <span class="badge portfolio-total" data-value="<%= totalValue %>">
+          Total Value: $<%= totalValue.toFixed(2) %>
+        </span>
       </div>
+
       <div class="portfolioBody">
         <% if (portfolio.length === 0) { %>
           <p>No stocks in portfolio.</p>
@@ -36,15 +39,24 @@
                 <th>Shares</th>
                 <th>Price</th>
                 <th>Value</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               <% portfolio.forEach(item => { %>
-              <tr>
+              <tr data-symbol="<%= item.symbol %>" data-shares="<%= item.shares %>">
                 <td><%= item.symbol %></td>
-                <td><%= item.shares %></td>
-                <td>$<%= item.price.toFixed(2) %></td>
-                <td>$<%= item.value.toFixed(2) %></td>
+                <td class="shares"><%= item.shares %></td>
+                <td class="price">$<%= item.price.toFixed(2) %></td>
+                <td class="value">$<%= item.value.toFixed(2) %></td>
+
+                <td class="action-buttons">
+                  <a href="/buy/<%= item.symbol %>" class="btn-buy">Buy</a>
+                  <form action="/sell/<%= item.symbol %>" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-sell">Sell</button>
+                  </form>
+                </td>
+
               </tr>
               <% }) %>
             </tbody>
@@ -53,5 +65,42 @@
       </div>
     </div>
   </div>
+
+  <!-- Live Value Fluctuation Script -->
+  <script>
+  function updatePortfolioFluctuation() {
+    let totalValue = 0;
+
+    document.querySelectorAll("tbody tr").forEach(row => {
+      const priceEl = row.querySelector(".price");
+      const valueEl = row.querySelector(".value");
+      const shares = parseInt(row.dataset.shares);
+
+      let price = parseFloat(priceEl.innerText.replace("$", ""));
+      let change = (Math.random() * 2 - 1).toFixed(2);
+
+      price = (price * (1 + change / 100)).toFixed(2);
+      priceEl.innerText = `$${price}`;
+
+      const newValue = (price * shares).toFixed(2);
+      valueEl.innerText = `$${newValue}`;
+
+      totalValue += parseFloat(newValue);
+
+      priceEl.classList.add("flash");
+      valueEl.classList.add("flash");
+      setTimeout(() => {
+        priceEl.classList.remove("flash");
+        valueEl.classList.remove("flash");
+      }, 300);
+    });
+
+    const totalEl = document.querySelector(".portfolio-total");
+    totalEl.innerText = `Total Value: $${totalValue.toFixed(2)}`;
+  }
+
+  setInterval(updatePortfolioFluctuation, 5000);
+  </script>
+
 </body>
 </html>

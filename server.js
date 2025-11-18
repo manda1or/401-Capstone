@@ -22,7 +22,7 @@ mongoose.connect(
 // --------------------
 const User = require('./model/user');
 const Stock = require('./model/stock');
-const Transaction = require('./model/transaction')
+const Transaction = require('./model/transaction');
 
 // --------------------
 // VIEW ENGINE
@@ -71,23 +71,15 @@ app.get('/', (req, res) => res.redirect('/login'));
 app.get('/login', (req, res) => res.render('login', { error: null, success: null }));
 app.get('/signup', (req, res) => res.render('signup', { error: null }));
 app.get('/forgot-password', (req, res) => res.render('forgot-password', { error: null }));
-app.get('/deposit', (req, res) => res.render('deposit', {user: req.session.user}))
 app.get('/add-stocks', isAdmin, (req, res) => { res.render('add-stocks', { user: req.session.user, error: null });});
-app.get('/withdraw', (req, res) => res.render('withdraw', {user: req.session.user, error: null}))
-
 
 // --------------------
 // ADMIN ROUTES
 // --------------------
-
-// Admin dashboard - show current stocks
 app.get('/admin-dashboard', isAdmin, async (req, res) => {
   const stocks = await Stock.find();
   res.render('admin-dashboard', { user: req.session.user, stocks });
 });
-
-// Add stock
-
 
 app.post('/add-stocks', isAdmin, async (req, res) => {
   const { name, price, quantity } = req.body;
@@ -99,13 +91,9 @@ app.post('/add-stocks', isAdmin, async (req, res) => {
   }
 });
 
-
-
 // --------------------
 // USER ROUTES
 // --------------------
-
-// User dashboard - show all stocks
 app.get('/dashboard', isUser, async (req, res) => {
   const userSession = req.session.user;
   const user = await User.findOne({ username: userSession.username }).populate('portfolio.stockId');
@@ -129,9 +117,7 @@ app.get('/dashboard', isUser, async (req, res) => {
     });
   }
 
-  // You currently do NOT store user cash, so let's temporarily assume $10,000
   const cashBalance = user.cashBalance || 10000;
-
   const totalValue = cashBalance + portfolioValue;
 
   res.render('dashboard', {
@@ -144,6 +130,73 @@ app.get('/dashboard', isUser, async (req, res) => {
   });
 });
 
+// --------------------
+// WALLET ROUTES (Deposit + Withdraw)
+// --------------------
+app.get('/wallet', isUser, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.session.user.username });
+    if (!user) return res.redirect('/login');
+    res.render('wallet', { user, error: null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post('/deposit', isUser, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.session.user.username });
+    if (!user) return res.redirect('/login');
+
+    const amount = Number(req.body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.render('wallet', { user, error: "Invalid deposit amount" });
+    }
+
+    user.cashBalance = (user.cashBalance || 0) + amount;
+
+    if (!user.history) user.history = [];
+    user.history.push({ type: "Deposit", amount, date: new Date() });
+
+    await user.save();
+
+    req.session.user.cashBalance = user.cashBalance;
+    res.redirect('/wallet');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post('/withdraw', isUser, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.session.user.username });
+    if (!user) return res.redirect('/login');
+
+    const amount = Number(req.body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.render('wallet', { user, error: "Invalid withdraw amount" });
+    }
+
+    if ((user.cashBalance || 0) < amount) {
+      return res.render('wallet', { user, error: "Insufficient balance" });
+    }
+
+    user.cashBalance -= amount;
+
+    if (!user.history) user.history = [];
+    user.history.push({ type: "Withdraw", amount, date: new Date() });
+
+    await user.save();
+
+    req.session.user.cashBalance = user.cashBalance;
+    res.redirect('/wallet');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 // --------------------
 // AUTHENTICATION ROUTES
@@ -185,130 +238,47 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-//Buying stocks
-
-app.post('/buy/:id', isUser, async (req, res) => {
-  if (!req.session.user) return res.redirect("/login");
-
-  const user = await User.findOne({ username: req.session.user.username });
-  if (!user) return res.status(404).send("User not found");
-
-  const stock = await Stock.findById(req.params.id);
-  if (!stock || stock.quantity <= 0) return res.send("Out of stock");
-  if (user.cashBalance < stock.price) return res.send("Not enough balance");
-
-  // Reduce stock quantity
-  stock.quantity -= 1;
-  await stock.save();
-
-  // Deduct cash
-  user.cashBalance -= stock.price;
-
-  // Add to portfolio
-  const owned = user.portfolio.find(p => String(p.stockId) === String(stock._id));
-  if (owned) {
-    owned.shares += 1;
-  } else {
-    user.portfolio.push({ stockId: stock._id, shares: 1 });
-  }
-
-  // Initialize history if missing
-  if (!user.history) user.history = [];
-
-  // Record purchase in history
-  user.history.push({
-    type: "Buy",
-    amount: stock.price,
-    date: new Date(),
-    stockName: stock.name,   // optional extra info
-    shares: 1
-  });
-
-  await user.save();
-
-  res.redirect('/dashboard');
-});
-
-
-
-//Deposit
-app.post("/deposit", isUser, async (req, res) => {
-  if (!req.session.user) return res.redirect("/login");
-
-  const user = await User.findOne({ username: req.session.user.username });
-  if (!user) return res.status(404).send("User not found");
-
-  const amount = Number(req.body.amount);
-  if (isNaN(amount) || amount <= 0) return res.send("Invalid deposit amount");
-
-  // Initialize history if missing
-  if (!user.history) user.history = [];
-
-  // Update cash balance and record history
-  user.cashBalance += amount;
-  user.history.push({
-    type: "Deposit",
-    amount,
-    date: new Date()
-  });
-
-  await user.save();
-  res.redirect("/dashboard");
-});
-
-
-//History 
-app.get("/history", isUser, async (req, res) => {
-  const user = await User.findOne({ username: req.session.user.username });
-  if (!user) return res.status(404).send("User not found");
-
-  // Provide empty array fallback
-  const history = user.history || [];
-
-  res.render("history", { user, history });
-});
-
-
-/// Withdraw
-// Handle Withdraw
-app.post('/withdraw', isUser, async (req, res) => {
+// Login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
   try {
-    const amount = Number(req.body.amount);
-    if (isNaN(amount) || amount <= 0) {
-      return res.render('withdraw', { user: req.session.user, error: "Invalid withdraw amount" });
-    }
+    const user = await User.findOne({ username });
+    if (!user) return res.render('login', { error: 'User not found', success: null });
 
-    // Find user by username instead of _id
-    const user = await User.findOne({ username: req.session.user.username });
-    if (!user) return res.status(404).send("User not found");
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return res.render('login', { error: 'Incorrect password', success: null });
 
-    if (user.cashBalance < amount) {
-      return res.render('withdraw', { user: req.session.user, error: "Insufficient balance" });
-    }
+    req.session.user = { 
+      name: `${user.firstName} ${user.lastName}`,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      cashBalance: user.cashBalance || 10000
+    };
 
-    // Deduct from cash balance
-    user.cashBalance -= amount;
-
-    // Add to history
-    if (!user.history) user.history = [];
-    user.history.push({
-      type: "Withdraw",
-      amount,
-      date: new Date()
-    });
-
-    await user.save();
-    res.redirect('/dashboard');
+    if (user.role === "admin") return res.redirect('/admin-dashboard');
+    return res.redirect('/dashboard');
   } catch (err) {
     console.error(err);
-    res.status(500).send("Internal server error");
+    res.render('login', { error: 'Something went wrong', success: null });
   }
 });
 
+// Logout
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/login');
+});
 
-//Portfolio
+// Forgot password (placeholder)
+app.post('/forgot-password', (req, res) => {
+  console.log(req.body);
+  res.redirect('/login');
+});
 
-// Full portfolio page
+// --------------------
+// PORTFOLIO & HISTORY
+// --------------------
 app.get('/portfolio', isUser, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.session.user.username }).populate('portfolio.stockId');
@@ -335,11 +305,17 @@ app.get('/portfolio', isUser, async (req, res) => {
   }
 });
 
-//admin-history
+app.get('/history', isUser, async (req, res) => {
+  const user = await User.findOne({ username: req.session.user.username });
+  if (!user) return res.status(404).send("User not found");
+
+  const history = user.history || [];
+  res.render("history", { user, history });
+});
 
 app.get('/admin-history', isAdmin, async (req, res) => {
   try {
-    const stocks = await Stock.find().sort({ createdAt: -1 }); // latest first
+    const stocks = await Stock.find().sort({ createdAt: -1 });
     res.render('admin-history', { user: req.session.user, stocks });
   } catch (err) {
     console.error(err);
@@ -347,46 +323,42 @@ app.get('/admin-history', isAdmin, async (req, res) => {
   }
 });
 
+// Buying stocks
+app.post('/buy/:id', isUser, async (req, res) => {
+  if (!req.session.user) return res.redirect("/login");
 
+  const user = await User.findOne({ username: req.session.user.username });
+  if (!user) return res.status(404).send("User not found");
 
+  const stock = await Stock.findById(req.params.id);
+  if (!stock || stock.quantity <= 0) return res.send("Out of stock");
+  if (user.cashBalance < stock.price) return res.send("Not enough balance");
 
+  stock.quantity -= 1;
+  await stock.save();
 
-// Login
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const user = await User.findOne({ username });
-    if (!user) return res.render('login', { error: 'User not found', success: null });
+  user.cashBalance -= stock.price;
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) return res.render('login', { error: 'Incorrect password', success: null });
-
-    // Save full name + info in session
-    req.session.user = { 
-      name: `${user.firstName} ${user.lastName}`,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    };
-
-    if (user.role === "admin") return res.redirect('/admin-dashboard');
-    return res.redirect('/dashboard');
-  } catch (err) {
-    console.error(err);
-    res.render('login', { error: 'Something went wrong', success: null });
+  const owned = user.portfolio.find(p => String(p.stockId) === String(stock._id));
+  if (owned) {
+    owned.shares += 1;
+  } else {
+    user.portfolio.push({ stockId: stock._id, shares: 1 });
   }
-});
 
-// Logout
-app.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/login');
-});
+  if (!user.history) user.history = [];
+  user.history.push({
+    type: "Buy",
+    amount: stock.price,
+    date: new Date(),
+    stockName: stock.name,
+    shares: 1
+  });
 
-// Forgot password (placeholder)
-app.post('/forgot-password', (req, res) => {
-  console.log(req.body);
-  res.redirect('/login');
+  await user.save();
+  req.session.user.cashBalance = user.cashBalance;
+
+  res.redirect('/dashboard');
 });
 
 // --------------------
