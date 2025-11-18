@@ -361,6 +361,133 @@ app.post('/buy/:id', isUser, async (req, res) => {
   res.redirect('/dashboard');
 });
 
+
+
+//
+// Add cash from sold stock to wallet
+//
+// User will put in an amount of stock they own to sell
+app.post("/sell/:id", isUser, async, async (req, res) => {
+    try{
+    if(!req.session.user) {
+      return res.redirect("/login")
+    }
+
+    const stockID = req.params.id;
+    //user will input amount of shares to sell
+    const sellShares = Number(req.body.shares);
+
+    //this will check to see if share amount is able to be sold
+    if(isNaN(sellShares) || sellShares <= 0) {
+      return res.send("Invalid amount of shares!")
+    }
+
+     const user = await User.findOne({username: req.session.user.username});
+  if(!user) {
+    return res.status(404).send("User not found.");
+  }
+  const stock = await Stock.findById(stockID);
+  if(!stock) {
+    return res.status(404).send("Stock not found.");
+  }
+
+  //find user stock
+  let portfolioItem = user.portfolio.find(p => String(p.stockID) === String(stockID));
+
+  if(!portfolioItem || portfolioItem.shares < sellShares) {
+    return res.send("Not enough shares to sell.");
+  }
+
+  //update user portfolio
+  portfolioItem.shares -= sellShares;
+  if(portfolioItem.shares === 0) {
+    user.portfolio = user.portfolio.filter(p => String(p.stockID) !== String(p.stockID));
+  }
+
+  //add cash earned to balance
+  const newCash = stock.price * sellShares;
+  user.cashBalance = (user.cashBalance || 0) + newCash
+
+  //sold shares will enter back into market
+  stock.quantity += sellShares;
+
+  //history
+  if(!user.history) user.history = [];
+  user.history.push({
+    type: "Sell",
+    shares: sellShares,
+    amount: newCash,
+    stockName: stock.name,
+    date: new Date()
+  });
+
+  await user.save()
+  await stock.save()
+
+  res.redirect("/portfolio");
+  } catch {
+    console.error(err);
+    res.status(500).send("Error")
+  }
+});
+
+//
+//stock fluctuation
+//
+function stockFluctuation() {
+  // stock price will fluctuate every 2 minutes
+  setInterval(updateStockPrices, 2 * 60 * 1000)
+}
+
+async function updateStockPrices() {
+  try {
+    const stocks = await Stock.find();
+
+    for(let stock of stocks) {
+      let currentPrice = Number(stock.price);
+      if(isNaN(currentPrice) || currentPrice <= 0) {
+        continue;
+      }
+
+      //random percentage from range 1-20
+      const percentChange = (Math.random() * (0.20 - 0.01)) + 0.01;
+
+      //random choice to be positive or negative percentage
+      const increasePercentage = Math.random() < 0.05;
+
+      let priceChange = currentPrice * percentChange;
+
+      if(!increasePercentage) {
+        priceChange = -priceChange;
+      }
+
+      //price after fluctuation
+      let newPrice = currentPrice + priceChange;
+
+      //check if fluctuation makes price go less than one dollar
+      if(newPrice < 1) {
+        newPrice = 1;
+      }
+
+      //two decimal places for stock after fluctuation
+      newPrice = Number(newPrice.toFixed(2));
+
+      //save price in stock market
+      stock.price = newPrice;
+      await stock.save();
+
+      //this code is to see if stock price is changing in console log
+      // console.log("Updated ${stock.name}: ${currentPrice} -> ${newPrice}");
+    }
+
+  } catch (err) {
+    console.error("Error updating prices", err);
+  }
+}
+
+stockFluctuation();
+
+
 // --------------------
 // START SERVER
 // --------------------
