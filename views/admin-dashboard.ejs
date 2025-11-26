@@ -1,56 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="/style1.css" />
-    <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/style1.css">
 </head>
 
 <body>
-    <div class="topnavMessage">
-        <div class="welcomeMessage">
-           <p>Hello <%= user.name %> (<%= user.role %>)</p>
-        </div>
-        
-    <div class="topnav">
-        <a href="/admin-dashboard">Dashboard</a> 
-        <a href="/add-stocks">Create Stocks</a>
-        <a href="/admin-history">History</a>
-        <a href="/logout">Logout</a>
-     </div>
-    </div>
 
-    <div class="mainPortfolio">
+<div class="topnavMessage">
+  <div class="welcomeMessage">
+    <p>Hello <%= user.name %> (Admin)</p>
+  </div>
+
+  <div class="topnav">
+    <a href="/admin-dashboard">Dashboard</a>
+    <a href="/add-stocks">Create Stocks</a>
+    <a href="/admin-history">History</a>
+    <a href="/logout">Logout</a>
+  </div>
+</div>
+
+<div class="mainPortfolio">
   <div class="portfolioCard">
+
     <div class="portfolioHeader">
-      <span class="badge">Portfolio</span>
-      <h2>Current Holdings</h2>
+      <h2>Admin Stock Management</h2>
+      <span class="badge">
+        Market: <%= marketStatus %>
+        <% if (nextOpen) { %>
+          <br><small>Next Open: <%= nextOpen %></small>
+        <% } %>
+      </span>
     </div>
 
     <div class="portfolioBody">
-      <div class="totalValue">$0.00</div>
-      <div class="subtext">Total portfolio value</div>
+      <% if (stocks.length === 0) { %>
+        <p>No stocks created yet.</p>
+      <% } else { %>
 
-      <div class="miniGrid">
-        <div class="stat">
-          <span>Invested</span>
-          <strong>$0.00</strong>
-        </div>
-        <div class="stat">
-          <span>Gain/Loss</span>
-          <strong>0.00%</strong>
-        </div>
-      </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% stocks.forEach(stock => { %>
+            <tr>
+              <td><%= stock.name %></td>
+              <td>$<%= stock.price.toFixed(2) %></td>
+              <td><%= stock.quantity %></td>
+
+              <td>
+                <form 
+                  action="/admin/delete-stock/<%= stock._id %>" 
+                  method="POST" 
+                  onsubmit="return confirm('Delete this stock? This removes it from ALL users.')"
+                  style="display:inline;"
+                >
+                  <button class="btn-sell">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+      <% } %>
     </div>
 
-    <div class="chartSection">
-  <div class="chartSquare" aria-label="Stock trend placeholder grid"></div>
-  </div>
-  
   </div>
 </div>
 
 </body>
-
 </html>
