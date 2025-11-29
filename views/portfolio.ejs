@@ -51,7 +51,10 @@
                 <td class="value">$<%= item.value.toFixed(2) %></td>
 
                 <td class="action-buttons">
-                  <a href="/buy/<%= item.symbol %>" class="btn-buy">Buy</a>
+                  <!-- Buy button as POST form -->
+                  <form action="/buy/<%= item.stockId %>" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-buy">Buy</button>
+                  </form>
                   <form action="/sell/<%= item.symbol %>" method="POST" style="display:inline;">
                     <button type="submit" class="btn-sell">Sell</button>
                   </form>

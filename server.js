@@ -35,7 +35,6 @@ app.set('views', path.join(__dirname, 'views'));
 // --------------------
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-
 app.use(session({
   secret: 'yourSecretKey',
   resave: false,
@@ -68,7 +67,6 @@ async function getSessionUser(req) {
   const user = await User.findOne({ username: req.session.user.username });
   if (!user) return null;
 
-  // Update session to ensure correct name and cash balance
   req.session.user.name = `${user.firstName} ${user.lastName}`;
   req.session.user.cashBalance = user.cashBalance || 100;
 
@@ -110,7 +108,9 @@ app.get('/admin-dashboard', isAdmin, async (req, res) => {
     user,
     stocks,
     marketStatus: marketInfo.status,
-    nextOpen: marketInfo.nextOpen
+    nextOpen: marketInfo.nextOpen,
+    success: null,
+    settings: global.marketSettings || {}
   });
 });
 
@@ -163,6 +163,80 @@ app.post('/admin/delete-stock/:id', isAdmin, async (req, res) => {
 });
 
 // --------------------
+// ADMIN MARKET SETTINGS
+// --------------------
+app.get('/admin/market-settings', isAdmin, async (req, res) => {
+  const user = await getSessionUser(req);
+  const currentSettings = global.marketSettings || {
+    holidayClosed: false,
+    mondayOpen: true,
+    tuesdayOpen: true,
+    wednesdayOpen: true,
+    thursdayOpen: true,
+    fridayOpen: true,
+    saturdayOpen: false,
+    sundayOpen: false,
+    mondayOpenTime: '09:00',
+    mondayCloseTime: '17:00',
+    tuesdayOpenTime: '09:00',
+    tuesdayCloseTime: '17:00',
+    wednesdayOpenTime: '09:00',
+    wednesdayCloseTime: '17:00',
+    thursdayOpenTime: '09:00',
+    thursdayCloseTime: '17:00',
+    fridayOpenTime: '09:00',
+    fridayCloseTime: '17:00',
+    saturdayOpenTime: '09:00',
+    saturdayCloseTime: '17:00',
+    sundayOpenTime: '09:00',
+    sundayCloseTime: '17:00'
+  };
+  res.render('market-settings', { user, settings: currentSettings, error: null, success: null });
+});
+
+app.post('/admin/update-market-settings', isAdmin, async (req, res) => {
+  try {
+    const user = await getSessionUser(req);
+
+    const days = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+    const holidayClosed = req.body.holidayClosed === 'on';
+
+    const newSettings = { holidayClosed };
+
+    days.forEach(day => {
+      newSettings[day + 'Open'] = req.body[day + 'Open'] === 'on';
+      newSettings[day + 'OpenTime'] = req.body[day + 'OpenTime'] || '09:00';
+      newSettings[day + 'CloseTime'] = req.body[day + 'CloseTime'] || '17:00';
+    });
+
+    global.marketSettings = newSettings;
+
+    // Fetch stocks for dashboard and render it with success message & current settings
+    const stocks = await Stock.find();
+    const marketInfo = getMarketStatus();
+
+    res.render('admin-dashboard', {
+      user,
+      stocks,
+      marketStatus: marketInfo.status,
+      nextOpen: marketInfo.nextOpen,
+      success: "Changes saved successfully!",
+      settings: global.marketSettings
+    });
+
+  } catch (err) {
+    console.error(err);
+    const user = await getSessionUser(req);
+    res.render('market-settings', {
+      user,
+      settings: global.marketSettings,
+      error: "Error updating settings",
+      success: null
+    });
+  }
+});
+
+// --------------------
 // USER ROUTES
 // --------------------
 
@@ -195,10 +269,6 @@ app.get('/wallet', isUser, async (req, res) => {
   res.render('wallet', { user, error: null });
 });
 
-// --------------------
-// DEPOSIT AND WITHDRAW
-// --------------------
-
 // Deposit
 app.post('/deposit', isUser, async (req, res) => {
   try {
@@ -212,12 +282,10 @@ app.post('/deposit', isUser, async (req, res) => {
     }
 
     dbUser.cashBalance = (dbUser.cashBalance || 100) + amount;
-
     if (!dbUser.history) dbUser.history = [];
     dbUser.history.push({ type: "Deposit", amount, date: new Date() });
 
     await dbUser.save();
-
     req.session.user.cashBalance = dbUser.cashBalance;
 
     res.redirect('/wallet');
@@ -245,12 +313,10 @@ app.post('/withdraw', isUser, async (req, res) => {
     }
 
     dbUser.cashBalance -= amount;
-
     if (!dbUser.history) dbUser.history = [];
     dbUser.history.push({ type: "Withdraw", amount, date: new Date() });
 
     await dbUser.save();
-
     req.session.user.cashBalance = dbUser.cashBalance;
 
     res.redirect('/wallet');
@@ -266,6 +332,7 @@ app.get('/portfolio', isUser, async (req, res) => {
   const dbUser = await User.findOne({ username: user.username }).populate('portfolio.stockId');
 
   const portfolio = dbUser.portfolio.map(item => ({
+    stockId: item.stockId._id,   // Add this
     symbol: item.stockId.name,
     shares: item.shares,
     price: item.stockId.price,
@@ -276,6 +343,7 @@ app.get('/portfolio', isUser, async (req, res) => {
   res.render('portfolio', { user, portfolio, cashBalance: dbUser.cashBalance || 100, totalValue });
 });
 
+
 // History
 app.get('/history', isUser, async (req, res) => {
   const user = await getSessionUser(req);
@@ -284,41 +352,57 @@ app.get('/history', isUser, async (req, res) => {
   res.render("history", { user, history });
 });
 
-// --------------------
-// BUY STOCK
-// --------------------
+// Buy stock
+// Buy stock by ID
 app.post('/buy/:id', isUser, async (req, res) => {
-  const user = await getSessionUser(req);
-  const dbUser = await User.findOne({ username: user.username });
-  const stock = await Stock.findById(req.params.id);
+  try {
+    const user = await getSessionUser(req);
+    const dbUser = await User.findOne({ username: user.username });
+    const stock = await Stock.findById(req.params.id);
 
-  if (!stock || stock.quantity <= 0) return res.send("Out of stock");
-  if ((dbUser.cashBalance || 100) < stock.price) return res.send("Not enough balance");
+    if (!stock) return res.send("Stock not found");
+    if (stock.quantity <= 0) return res.send("Out of stock");
+    if ((dbUser.cashBalance || 100) < stock.price) return res.send("Not enough balance");
 
-  stock.quantity -= 1;
-  await stock.save();
+    // Decrease stock quantity
+    stock.quantity -= 1;
+    await stock.save();
 
-  dbUser.cashBalance -= stock.price;
+    // Deduct user cash balance
+    dbUser.cashBalance -= stock.price;
 
-  const owned = dbUser.portfolio.find(p => String(p.stockId) === String(stock._id));
-  if (owned) {
-    owned.shares += 1;
-  } else {
-    dbUser.portfolio.push({ stockId: stock._id, shares: 1 });
+    // Update portfolio
+    const owned = dbUser.portfolio.find(p => String(p.stockId) === String(stock._id));
+    if (owned) {
+      owned.shares += 1;
+    } else {
+      dbUser.portfolio.push({ stockId: stock._id, shares: 1 });
+    }
+
+    // Save transaction history
+    if (!dbUser.history) dbUser.history = [];
+    dbUser.history.push({
+      type: "Buy",
+      amount: stock.price,
+      date: new Date(),
+      stockName: stock.name,
+      shares: 1
+    });
+
+    await dbUser.save();
+
+    // Update session cash balance
+    req.session.user.cashBalance = dbUser.cashBalance;
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error buying stock");
   }
-
-  if (!dbUser.history) dbUser.history = [];
-  dbUser.history.push({ type: "Buy", amount: stock.price, date: new Date(), stockName: stock.name, shares: 1 });
-
-  await dbUser.save();
-  req.session.user.cashBalance = dbUser.cashBalance;
-
-  res.redirect('/dashboard');
 });
 
-// --------------------
-// SELL STOCK
-// --------------------
+
+// Sell stock
 app.post('/sell/:symbol', isUser, async (req, res) => {
   const user = await getSessionUser(req);
   const dbUser = await User.findOne({ username: user.username }).populate('portfolio.stockId');
@@ -369,7 +453,7 @@ app.post('/signup', async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      cashBalance: 100 // Start cash balance
+      cashBalance: 100
     });
     await newUser.save();
 
@@ -420,13 +504,16 @@ function getMarketStatus() {
   const day = now.getDay();
   const hour = now.getHours();
 
-  const holidays = ["2025-01-01","2025-07-04","2025-12-25"];
+  const holidays = (global.marketSettings?.holidays) || ["2025-01-01","2025-07-04","2025-12-25"];
+  const openHour = (global.marketSettings?.openHour) || 9;
+  const closeHour = (global.marketSettings?.closeHour) || 17;
+
   const todayStr = now.toISOString().split('T')[0];
 
-  if (holidays.includes(todayStr)) return { status: "Closed (Holiday)", nextOpen: "Tomorrow 9 AM" };
-  if (day === 0 || day === 6) return { status: "Closed (Weekend)", nextOpen: "Monday 9 AM" };
-  if (hour < 9) return { status: "Closed", nextOpen: "Today 9 AM" };
-  if (hour >= 17) return { status: "Closed", nextOpen: "Tomorrow 9 AM" };
+  if (holidays.includes(todayStr)) return { status: "Closed (Holiday)", nextOpen: `Tomorrow ${openHour} AM` };
+  if (day === 0 || day === 6) return { status: "Closed (Weekend)", nextOpen: `Monday ${openHour} AM` };
+  if (hour < openHour) return { status: "Closed", nextOpen: `Today ${openHour} AM` };
+  if (hour >= closeHour) return { status: "Closed", nextOpen: `Tomorrow ${openHour} AM` };
 
   return { status: "Open", nextOpen: null };
 }
@@ -434,6 +521,6 @@ function getMarketStatus() {
 // --------------------
 // START SERVER
 // --------------------
-//app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
-app.listen(3000, "0.0.0.0", () => {console.log("Server running on port 3000")});
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});

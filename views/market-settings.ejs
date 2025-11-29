@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Market Settings</title>
+  <link rel="stylesheet" href="/style1.css">
+</head>
+<body>
+
+  <div class="topnavMessage">
+    <div class="welcomeMessage">
+      <p>Hello <%= user.name %> (Admin)</p>
+    </div>
+    <div class="topnav">
+      <a href="/admin-dashboard">Dashboard</a>
+      <a href="/add-stocks">Create Stocks</a>
+      <a href="/admin-history">History</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="mainPortfolio">
+    <div class="portfolioCard">
+
+      <div class="portfolioHeader">
+        <h2>Market Settings</h2>
+      </div>
+
+      <div class="portfolioBody">
+        <% if (error) { %>
+          <p style="color:red"><%= error %></p>
+        <% } %>
+        <% if (success) { %>
+          <p style="color:green"><%= success %></p>
+        <% } %>
+
+        <form action="/admin/update-market-settings" method="POST">
+
+          <!-- Holiday Closed -->
+          <label>
+            <strong>Market Closed for Holidays:</strong>
+            <input type="checkbox" name="holidayClosed" <%= settings.holidayClosed ? "checked" : "" %> >
+          </label>
+          <br><br>
+
+          <!-- Day Toggles -->
+          <h4>Days of the Week</h4>
+          <% const days = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]; %>
+          <% days.forEach(day => { %>
+            <label style="display:block; margin-bottom:6px;">
+              <%= day.charAt(0).toUpperCase() + day.slice(1) %> Open:
+              <input type="checkbox" name="<%= day %>Open" <%= settings[day + "Open"] ? "checked" : "" %> >
+            </label>
+          <% }) %>
+
+          <br>
+
+          <!-- Open/Close Times -->
+          <h4>Market Hours</h4>
+          <% days.forEach(day => { %>
+            <div style="margin-bottom:10px;">
+              <strong><%= day.charAt(0).toUpperCase() + day.slice(1) %></strong><br>
+
+              Open Time:
+              <input type="time" name="<%= day %>OpenTime" 
+                     value="<%= settings[day + 'OpenTime'] || '09:00' %>">
+
+              Close Time:
+              <input type="time" name="<%= day %>CloseTime" 
+                     value="<%= settings[day + 'CloseTime'] || '17:00' %>">
+            </div>
+          <% }) %>
+
+          <button type="submit" class="btn-sell" style="margin-top:10px;">Save Settings</button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
