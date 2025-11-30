@@ -433,20 +433,31 @@ app.post('/sell/:symbol', isUser, async (req, res) => {
 // AUTH ROUTES
 // --------------------
 
-// Signup
+// --------------------
+// SIGNUP ROUTE (auto-login)
+// --------------------
 app.post('/signup', async (req, res) => {
   const { firstName, lastName, username, email, password, confirmPassword } = req.body;
-  if (!firstName || !lastName || !username || !email || !password)
+
+  // Basic validation
+  if (!firstName || !lastName || !username || !email || !password) {
     return res.render('signup', { user: req.session.user, error: "All fields are required" });
-  if (password !== confirmPassword)
+  }
+  if (password !== confirmPassword) {
     return res.render('signup', { user: req.session.user, error: "Passwords do not match" });
+  }
 
   try {
+    // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-    if (existingUser)
+    if (existingUser) {
       return res.render('signup', { user: req.session.user, error: "Username or Email already exists" });
+    }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
     const newUser = new User({
       firstName,
       lastName,
@@ -455,14 +466,31 @@ app.post('/signup', async (req, res) => {
       password: hashedPassword,
       cashBalance: 100
     });
-    await newUser.save();
 
-    res.render('login', { user: req.session.user, success: "Account created! Please log in.", error: null });
+    console.log("Attempting to save user:", newUser); // Debug
+    await newUser.save();
+    console.log("User saved successfully!"); // Debug
+
+    // Auto-login the new user
+    req.session.user = {
+      name: `${newUser.firstName} ${newUser.lastName}`,
+      username: newUser.username,
+      email: newUser.email,
+      role: newUser.role,
+      cashBalance: newUser.cashBalance
+    };
+
+    // Redirect based on role
+    if (newUser.role === "admin") return res.redirect('/admin-dashboard');
+    return res.redirect('/dashboard');
+
   } catch (err) {
-    console.error(err);
+    console.error("Signup error:", err);
     res.render('signup', { user: req.session.user, error: "Error creating account." });
   }
 });
+
+
 
 // Login
 app.post('/login', async (req, res) => {
